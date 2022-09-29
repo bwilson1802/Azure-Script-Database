@@ -1,0 +1,119 @@
+# create a new RG
+
+$location = (Get-AzResourceGroup -Name <az104-03b-rg1>).Location
+
+$rgName = '<az104-03c-rg1>'
+
+New-AzResourceGroup -Name $rgName -Location $location
+
+
+# get properties
+
+Get-AzResourceGroup -Name $rgName
+
+
+# create a new managed disk
+
+$diskConfig = New-AzDiskConfig `
+-Location $location `
+-CreateOption Empty `
+-DiskSizeGB 32 `
+-Sku Standard_LRS
+
+$diskName = 'az104-03c-disk1'
+
+New-AzDisk `
+-ResourceGroupName $rgName `
+-DiskName $diskName `
+-Disk $diskConfig
+
+
+# retrieve properties
+Get-AzDisk -ResourceGroupName $rgName -Name $diskName
+
+
+# increase the size of the Azure managed disk to 64 GB
+
+New-AzDiskUpdateConfig -DiskSizeGB 64 | Update-AzDisk -ResourceGroupName $rgName -DiskName $diskName
+
+
+# verify the current SKU as Standard_LRS
+
+(Get-AzDisk -ResourceGroupName $rgName -Name $diskName).Sku
+
+
+# change the disk performance SKU to Premium_LRS
+
+New-AzDiskUpdateConfig -Sku Premium_LRS | Update-AzDisk -ResourceGroupName $rgName -DiskName $diskName
+
+
+# verify that the change
+
+(Get-AzDisk -ResourceGroupName $rgName -Name $diskName).Sku
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+BASH!!!!!!!!!!
+
+# When using multi-line syntax, ensure that each line ends with back-slash
+
+
+# create a resource group in the same Azure region
+
+LOCATION=$(az group show --name 'az104-03c-rg1' --query location --out tsv)
+
+RGNAME='az104-03d-rg1'
+
+az group create --name $RGNAME --location $LOCATION
+
+
+# retrieve properties
+
+az group show --name $RGNAME
+
+# create a new managed disk
+
+DISKNAME='az104-03d-disk1'
+
+az disk create \
+--resource-group $RGNAME \
+--name $DISKNAME \
+--sku 'Standard_LRS' \
+--size-gb 32
+
+
+# retrieve properties
+
+az disk show --resource-group $RGNAME --name $DISKNAME
+
+
+# increase the size of the Azure managed disk to 64 GB
+
+az disk update --resource-group $RGNAME --name $DISKNAME --size-gb 64
+
+
+# verify that the change
+
+az disk show --resource-group $RGNAME --name $DISKNAME --query diskSizeGb
+
+
+# change the disk performance SKU to Premium_LRS
+
+
+az disk update --resource-group $RGNAME --name $DISKNAME --sku 'Premium_LRS'
+
