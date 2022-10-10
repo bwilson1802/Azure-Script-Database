@@ -51,6 +51,119 @@ New-AzDiskUpdateConfig -Sku Premium_LRS | Update-AzDisk -ResourceGroupName $rgNa
 
 (Get-AzDisk -ResourceGroupName $rgName -Name $diskName).Sku
 
+# custom role definition
+
+New-AzRoleDefinition -InputFile $HOME/az104-02a-customRoleDefinition.json
+
+# create a resource group in the same Azure region 
+$location = (Get-AzResourceGroup -Name az104-03b-rg1).Location
+
+$rgName = 'az104-03c-rg1'
+
+New-AzResourceGroup -Name $rgName -Location $location
+
+# retrieve properties 
+
+Get-AzResourceGroup -Name $rgName
+
+# create a new managed disk 
+
+$diskConfig = New-AzDiskConfig `
+-Location $location `
+-CreateOption Empty `
+-DiskSizeGB 32 `
+-Sku Standard_LRS
+
+$diskName = 'az104-03c-disk1'
+
+New-AzDisk `
+-ResourceGroupName $rgName `
+-DiskName $diskName `
+-Disk $diskConfig
+
+Get-AzDisk -ResourceGroupName $rgName -Name $diskName
+
+New-AzDiskUpdateConfig -DiskSizeGB 64 | Update-AzDisk -ResourceGroupName $rgName -DiskName $diskName
+
+(Get-AzDisk -ResourceGroupName $rgName -Name $diskName).Sku
+
+New-AzDiskUpdateConfig -Sku Premium_LRS | Update-AzDisk -ResourceGroupName $rgName -DiskName $diskName
+
+sh
+LOCATION=$(az group show --name 'az104-03c-rg1' --query location --out tsv)
+
+RGNAME='az104-03d-rg1'
+
+az group create --name $RGNAME --location $LOCATION
+
+az group show --name $RGNAME
+
+DISKNAME='az104-03d-disk1'
+
+az disk create \
+--resource-group $RGNAME \
+--name $DISKNAME \
+--sku 'Standard_LRS' \
+--size-gb 32
+
+az disk show --resource-group $RGNAME --name $DISKNAME
+
+az disk update --resource-group $RGNAME --name $DISKNAME --size-gb 64
+
+az disk show --resource-group $RGNAME --name $DISKNAME --query diskSizeGb
+
+az disk update --resource-group $RGNAME --name $DISKNAME --sku 'Premium_LRS'
+
+az disk show --resource-group $RGNAME --name $DISKNAME --query sku
+
+# deploy two virtual machines by using the template and parameter files
+
+$rgName = 'az104-04-rg1-lod26131933'
+
+New-AzResourceGroupDeployment `
+  -ResourceGroupName $rgName `
+  -TemplateFile $HOME/az104-04-vms-loop-template.json `
+  -TemplateParameterFile $HOME/az104-04-vms-loop-parameters.json
+
+# create the three virtual networks and deploy virtual machines into them by using the template and parameter files you uploaded:
+
+$location1 = 'eastus'
+
+$location2 = 'westus'
+
+$rgName = 'az104-05-rg1-lod26131987'
+
+New-AzResourceGroupDeployment `
+  -ResourceGroupName $rgName `
+  -TemplateFile $HOME/az104-05-vnetvm-loop-template.json `
+  -TemplateParameterFile $HOME/az104-05-vnetvm-loop-parameters.json `
+  -location1 $location1 `
+  -location2 $location2
+
+# add peering
+
+$vnet0 = Get-AzVirtualNetwork -Name 'az104-05-vnet0' -ResourceGroupName 'az104-05-rg1-lod26131987'
+$vnet1 = Get-AzVirtualNetwork -Name 'az104-05-vnet1' -ResourceGroupName 'az104-05-rg1-lod26131987'
+$vnet2 = Get-AzVirtualNetwork -Name 'az104-05-vnet2' -ResourceGroupName 'az104-05-rg1-lod26131987'
+Add-AzVirtualNetworkPeering -Name 'az104-05-vnet0_to_az104-05-vnet1' -VirtualNetwork $vnet0 -RemoteVirtualNetworkId $vnet1.Id
+Add-AzVirtualNetworkPeering -Name 'az104-05-vnet1_to_az104-05-vnet0' -VirtualNetwork $vnet1 -RemoteVirtualNetworkId $vnet0.Id
+Add-AzVirtualNetworkPeering -Name 'az104-05-vnet0_to_az104-05-vnet2' -VirtualNetwork $vnet0 -RemoteVirtualNetworkId $vnet2.Id
+Add-AzVirtualNetworkPeering -Name 'az104-05-vnet2_to_az104-05-vnet0' -VirtualNetwork $vnet2 -RemoteVirtualNetworkId $vnet0.Id
+Add-AzVirtualNetworkPeering -Name 'az104-05-vnet1_to_az104-05-vnet2' -VirtualNetwork $vnet1 -RemoteVirtualNetworkId $vnet2.Id
+Add-AzVirtualNetworkPeering -Name 'az104-05-vnet2_to_az104-05-vnet1' -VirtualNetwork $vnet2 -RemoteVirtualNetworkId $vnet1.Id
+
+# peering
+
+5.	$rgName = 'az104-05-rg1-lod26131987'
+6.	
+7.	$vnet0 = Get-AzVirtualNetwork -Name 'az104-05-vnet0' -ResourceGroupName $rgname
+8.	
+9.	$vnet1 = Get-AzVirtualNetwork -Name 'az104-05-vnet1' -ResourceGroupName $rgname
+10.	
+11.	Add-AzVirtualNetworkPeering -Name 'az104-05-vnet0_to_az104-05-vnet1' -VirtualNetwork $vnet0 -RemoteVirtualNetworkId $vnet1.Id
+12.	
+13.	Add-AzVirtualNetworkPeering -Name 'az104-05-vnet1_to_az104-05-vnet0' -VirtualNetwork $vnet1 -RemoteVirtualNetworkId $vnet0.Id
+
 
 
 
